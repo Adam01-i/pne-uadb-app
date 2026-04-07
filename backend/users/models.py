@@ -1,4 +1,5 @@
 # pne-uadb-app/backend/users/models.py
+
 from django.db import models
 from django.contrib.auth.models import AbstractUser
 
@@ -20,7 +21,7 @@ class Classe(models.Model):
 # ==============================
 # Custom User
 # ==============================
-class User(AbstractUser):
+class CustomUser(AbstractUser):
     ROLE_CHOICES = [
         ('etudiant', 'Etudiant'),
         ('agent', 'Agent Scolarité'),
@@ -46,7 +47,7 @@ class User(AbstractUser):
 # Étudiant (profil)
 # ==============================
 class Etudiant(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='etudiant')
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='etudiant')
     code_permanent = models.CharField(max_length=50)
     classe = models.ForeignKey(Classe, on_delete=models.CASCADE)
 
@@ -58,7 +59,7 @@ class Etudiant(models.Model):
 # Agent de scolarité (profil)
 # ==============================
 class AgentScolarite(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='agent')
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='agent')
     bureau = models.CharField(max_length=100)
 
     def __str__(self):
@@ -69,7 +70,7 @@ class AgentScolarite(models.Model):
 # Bibliothécaire (profil)
 # ==============================
 class Bibliothecaire(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='bibliothecaire')
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='bibliothecaire')
     numero_employe = models.CharField(max_length=50)
 
     def __str__(self):
@@ -80,7 +81,7 @@ class Bibliothecaire(models.Model):
 # Médecin (profil)
 # ==============================
 class Medecin(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE, related_name='medecin')
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='medecin')
     specialite = models.CharField(max_length=100)
 
     def __str__(self):
