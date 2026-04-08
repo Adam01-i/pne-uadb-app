@@ -15,6 +15,7 @@ router.register(r'classes', ClasseViewSet)
 router.register(r'agents', AgentScolariteViewSet)
 router.register(r'bibliothecaires', BibliothecaireViewSet)
 router.register(r'medecins', MedecinViewSet)
+from users.views import MeView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
@@ -22,4 +23,6 @@ urlpatterns = [
     # Endpoints JWT
     path('api/token/', TokenObtainPairView.as_view(), name='token_obtain_pair'),
     path('api/token/refresh/', TokenRefreshView.as_view(), name='token_refresh'),
+
+    path('api/me/', MeView.as_view()),
 ]

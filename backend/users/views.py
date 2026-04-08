@@ -6,6 +6,9 @@ from .serializers import (
     EtudiantSerializer, ClasseSerializer,
     AgentScolariteSerializer, BibliothecaireSerializer, MedecinSerializer
 )
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
 
 class EtudiantViewSet(viewsets.ModelViewSet):
     queryset = Etudiant.objects.all()
@@ -26,3 +29,15 @@ class BibliothecaireViewSet(viewsets.ModelViewSet):
 class MedecinViewSet(viewsets.ModelViewSet):
     queryset = Medecin.objects.all()
     serializer_class = MedecinSerializer
+
+class MeView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def get(self, request):
+        user = request.user
+        return Response({
+            "id": user.id,
+            "username": user.username,
+            "email": user.email,
+            "role": user.role
+        })
