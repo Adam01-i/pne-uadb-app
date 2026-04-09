@@ -12,10 +12,10 @@ from .serializers import (
 )
 from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
+from .permissions import IsAgent
 
 class EtudiantViewSet(viewsets.ModelViewSet):
     serializer_class = EtudiantSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -23,11 +23,10 @@ class EtudiantViewSet(viewsets.ModelViewSet):
             return Etudiant.objects.filter(user=user)
         return Etudiant.objects.all()
 
-    @action(detail=False, methods=['get'])
-    def me(self, request):
-        etudiant = get_object_or_404(Etudiant, user=request.user)
-        serializer = self.get_serializer(etudiant) 
-        return Response(serializer.data)
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'destroy']:
+            return [IsAgent()]
+        return [IsAuthenticated()]
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
