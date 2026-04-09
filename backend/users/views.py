@@ -16,6 +16,7 @@ from .permissions import IsAgent
 
 class EtudiantViewSet(viewsets.ModelViewSet):
     serializer_class = EtudiantSerializer
+    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
@@ -27,6 +28,11 @@ class EtudiantViewSet(viewsets.ModelViewSet):
         if self.action in ['create', 'update', 'destroy']:
             return [IsAgent()]
         return [IsAuthenticated()]
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        etudiant = get_object_or_404(Etudiant, user=request.user)
+        serializer = self.get_serializer(etudiant)
+        return Response(serializer.data)
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
