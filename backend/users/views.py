@@ -16,7 +16,6 @@ from .permissions import IsAgent
 
 class EtudiantViewSet(viewsets.ModelViewSet):
     serializer_class = EtudiantSerializer
-    permission_classes = [IsAuthenticated]
 
     def get_queryset(self):
         user = self.request.user
