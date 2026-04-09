@@ -1,34 +1,33 @@
 # pne-uadb-app/backend/users/views.py
 
 from rest_framework import viewsets
+from rest_framework.decorators import action
+from rest_framework.response import Response
+from rest_framework.permissions import IsAuthenticated
+
 from .models import Etudiant, Classe, AgentScolarite, Bibliothecaire, Medecin
 from .serializers import (
     EtudiantSerializer, ClasseSerializer,
     AgentScolariteSerializer, BibliothecaireSerializer, MedecinSerializer
 )
+from django.shortcuts import get_object_or_404
 from rest_framework.views import APIView
-from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
 
 class EtudiantViewSet(viewsets.ModelViewSet):
-    queryset = Etudiant.objects.all()
     serializer_class = EtudiantSerializer
+    permission_classes = [IsAuthenticated]
 
-class ClasseViewSet(viewsets.ModelViewSet):
-    queryset = Classe.objects.all()
-    serializer_class = ClasseSerializer
+    def get_queryset(self):
+        user = self.request.user
+        if user.role == 'etudiant':
+            return Etudiant.objects.filter(user=user)
+        return Etudiant.objects.all()
 
-class AgentScolariteViewSet(viewsets.ModelViewSet):
-    queryset = AgentScolarite.objects.all()
-    serializer_class = AgentScolariteSerializer
-
-class BibliothecaireViewSet(viewsets.ModelViewSet):
-    queryset = Bibliothecaire.objects.all()
-    serializer_class = BibliothecaireSerializer
-
-class MedecinViewSet(viewsets.ModelViewSet):
-    queryset = Medecin.objects.all()
-    serializer_class = MedecinSerializer
+    @action(detail=False, methods=['get'])
+    def me(self, request):
+        etudiant = get_object_or_404(Etudiant, user=request.user)
+        serializer = self.get_serializer(etudiant)
+        return Response(serializer.data)
 
 class MeView(APIView):
     permission_classes = [IsAuthenticated]
@@ -41,3 +40,22 @@ class MeView(APIView):
             "email": user.email,
             "role": user.role
         })
+
+class ClasseViewSet(viewsets.ModelViewSet):
+    queryset = Classe.objects.all()
+    serializer_class = ClasseSerializer
+
+
+class AgentScolariteViewSet(viewsets.ModelViewSet):
+    queryset = AgentScolarite.objects.all()
+    serializer_class = AgentScolariteSerializer
+
+
+class BibliothecaireViewSet(viewsets.ModelViewSet):
+    queryset = Bibliothecaire.objects.all()
+    serializer_class = BibliothecaireSerializer
+
+
+class MedecinViewSet(viewsets.ModelViewSet):
+    queryset = Medecin.objects.all()
+    serializer_class = MedecinSerializer

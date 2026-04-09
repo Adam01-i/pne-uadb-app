@@ -8,14 +8,14 @@ from users.views import (
     EtudiantViewSet, ClasseViewSet,
     AgentScolariteViewSet, BibliothecaireViewSet, MedecinViewSet
 )
+from users.views import MeView
 
 router = DefaultRouter()
-router.register(r'etudiants', EtudiantViewSet)
+router.register(r'etudiants', EtudiantViewSet, basename='etudiant')
 router.register(r'classes', ClasseViewSet)
 router.register(r'agents', AgentScolariteViewSet)
 router.register(r'bibliothecaires', BibliothecaireViewSet)
 router.register(r'medecins', MedecinViewSet)
-from users.views import MeView
 
 urlpatterns = [
     path('admin/', admin.site.urls),
