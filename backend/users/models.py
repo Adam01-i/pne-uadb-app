@@ -60,7 +60,6 @@ class Etudiant(models.Model):
 # ==============================
 class AgentScolarite(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='agent')
-    bureau = models.CharField(max_length=100)
 
     def __str__(self):
         return f"Agent: {self.user.get_full_name()}"
@@ -71,7 +70,6 @@ class AgentScolarite(models.Model):
 # ==============================
 class Bibliothecaire(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='bibliothecaire')
-    numero_employe = models.CharField(max_length=50)
 
     def __str__(self):
         return f"Bibliothécaire: {self.user.get_full_name()}"
@@ -82,7 +80,6 @@ class Bibliothecaire(models.Model):
 # ==============================
 class Medecin(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='medecin')
-    specialite = models.CharField(max_length=100)
 
     def __str__(self):
         return f"Médecin: {self.user.get_full_name()}"

@@ -139,9 +139,6 @@ class AgentScolariteSerializer(serializers.ModelSerializer):
     class Meta:
         model = AgentScolarite
         fields = "__all__"
-        extra_kwargs = {
-            'bureau': {'required': True},
-        }
 
     def validate(self, data):
         user_id_provided = 'user' in data and data['user'] is not None
@@ -216,9 +213,6 @@ class BibliothecaireSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bibliothecaire
         fields = "__all__"
-        extra_kwargs = {
-            'numero_employe': {'required': True},
-        }
 
     def validate(self, data):
         user_id_provided = 'user' in data and data['user'] is not None
@@ -292,9 +286,6 @@ class MedecinSerializer(serializers.ModelSerializer):
     class Meta:
         model = Medecin
         fields = "__all__"
-        extra_kwargs = {
-            'specialite': {'required': True},
-        }
 
     def validate(self, data):
         user_id_provided = 'user' in data and data['user'] is not None
