@@ -48,3 +48,10 @@ Thumbs.db
 # ── Divers ───────────────────────────────────────
 *.png
 tsconfig.tsbuildinfo
+.venv/
+venv/
+env/
+__pycache__/
+*.pyc
+.env
+db.sqlite3
