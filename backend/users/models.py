@@ -70,7 +70,6 @@ class AgentScolarite(models.Model):
 # ==============================
 class Bibliothecaire(models.Model):
     user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='bibliothecaire')
-    numero_employe = models.CharField(max_length=50)
 
     def __str__(self):
         return f"Bibliothécaire: {self.user.get_full_name()}"
