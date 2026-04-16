@@ -150,3 +150,8 @@ USE_TZ = True
 STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.CustomUser'
+
+# Default primary key field type
+PAYTECH_API_KEY = os.getenv("PAYTECH_API_KEY")
+PAYTECH_SECRET_KEY = os.getenv("PAYTECH_SECRET_KEY")
+PAYTECH_BASE_URL = "https://paytech.sn/api/payment/request-payment"
