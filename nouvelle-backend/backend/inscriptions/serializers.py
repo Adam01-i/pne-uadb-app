@@ -3,12 +3,25 @@ from .models import DossierReinscription, Notifications
 from users.models import Etudiant
 
 
-class NotificationSerializer(serializers.ModelSerializer):
+"""class NotificationSerializer(serializers.ModelSerializer):
     class Meta:
         model = Notifications
         fields = ['idNotification', 'emetteur', 'message', 'dateEnvoie', 'lu', 'etudiant']
         read_only_fields = ['idNotification', 'dateEnvoie']
-
+"""
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notifications
+        fields = [
+            'idNotification', 
+            'emetteur', 
+            'message', 
+            'dateEnvoie', 
+            'lu', 
+            'type_cible',
+            'destinataire' # Important pour savoir à qui elle appartient
+        ]
+        read_only_fields = ['idNotification', 'dateEnvoie']
 
 class DossierReinscriptionSerializer(serializers.ModelSerializer):
     etudiant_nom = serializers.CharField(

@@ -24,12 +24,16 @@ export default function Header({ user }: { user: User }) {
     year: 'numeric',
   });
 
+  // Définir les rôles autorisés à voir la cloche
+  const rolesWithNotifications: Role[] = ['etudiant', 'biblio', 'medecin'];
+
   return (
     <header className="bg-white border-b border-slate-100 px-6 py-3.5 flex items-center justify-between shrink-0">
       <p className="text-slate-500 text-sm capitalize">{dateStr}</p>
 
       <div className="flex items-center gap-3">
-        {user.role === 'etudiant' && <NotificationBell />}
+        {/* MODIFICATION ICI : On vérifie si le rôle de l'user est dans la liste autorisée */}
+        {rolesWithNotifications.includes(user.role) && <NotificationBell />}
 
         <span className="text-sm text-slate-600 font-medium hidden sm:block">
           {ROLE_LABEL[user.role]}

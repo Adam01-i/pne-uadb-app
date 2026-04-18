@@ -12,12 +12,14 @@ For the full list of settings and their values, see
 https://docs.djangoproject.com/en/6.0/ref/settings/
 """
 
+import os
 from pathlib import Path
+from dotenv import load_dotenv
 
 # Build paths inside the project like this: BASE_DIR / 'subdir'.
 BASE_DIR = Path(__file__).resolve().parent.parent
 
-
+load_dotenv()
 # Quick-start development settings - unsuitable for production
 # See https://docs.djangoproject.com/en/6.0/howto/deployment/checklist/
 
@@ -109,11 +111,11 @@ WSGI_APPLICATION = 'backend.wsgi.application'
 DATABASES = {
     'default': {
         'ENGINE': 'django.db.backends.postgresql',
-        'NAME': 'pne_db',
-        'USER': 'pne_user',
-        'PASSWORD': 'password123',
-        'HOST': 'localhost',
-        'PORT': '5432',
+        'NAME': os.getenv('DB_NAME'),        # Pas de valeur par défaut ici
+        'USER': os.getenv('DB_USER'),
+        'PASSWORD': os.getenv('DB_PASSWORD'), # Django cherchera UNIQUEMENT dans le .env
+        'HOST': os.getenv('DB_HOST', '127.0.0.1'),
+        'PORT': os.getenv('DB_PORT', '5432'),
     }
 }
 
@@ -155,8 +157,10 @@ STATIC_URL = 'static/'
 
 AUTH_USER_MODEL = 'users.CustomUser'
 
+
 AUTHENTICATION_BACKENDS = [
-    'users.authentication.EmailOrUsernameBackend',
+    'django.contrib.auth.backends.ModelBackend', # Garde celui par défaut
+    'users.authentication.EmailOrUsernameBackend', # Ajoute le tien
 ]
 
 DEFAULT_AUTO_FIELD = 'django.db.models.BigAutoField'

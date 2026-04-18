@@ -113,12 +113,23 @@ const NAV: NavItem[] = [
   },
   {
     href: '/dashboard/dossier',
-    label: 'Mon Dossier',
+    label: 'Dossiers',
     roles: ['etudiant', 'agent'],
     icon: (
       <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
         <path strokeLinecap="round" strokeLinejoin="round"
           d="M3.75 9.776c.112-.017.227-.026.344-.026h15.812c.117 0 .232.009.344.026m-16.5 0a2.25 2.25 0 00-1.883 2.542l.857 6a2.25 2.25 0 002.227 1.932H19.05a2.25 2.25 0 002.227-1.932l.857-6a2.25 2.25 0 00-1.883-2.542m-16.5 0V6A2.25 2.25 0 016 3.75h3.879a1.5 1.5 0 011.06.44l2.122 2.12a1.5 1.5 0 001.06.44H18A2.25 2.25 0 0120.25 9v.776" />
+      </svg>
+    ),
+  },
+  {
+    href: '/dashboard/notifications', // La nouvelle route
+    label: 'Centre de Notifications',         // Nom adapté
+    roles: ['agent'],               // Uniquement pour l'agent
+    icon: (
+      <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={1.5} className="w-5 h-5">
+        <path strokeLinecap="round" strokeLinejoin="round" 
+          d="M14.857 17.082a23.848 23.848 0 005.454-1.31A8.967 8.967 0 0118 9.75v-.7V9A6 6 0 006 9v.75a8.967 8.967 0 01-2.312 6.022c1.733.64 3.56 1.085 5.455 1.31m5.714 0a24.255 24.255 0 01-5.714 0m5.714 0a3 3 0 11-5.714 0M3.124 7.5A8.969 8.969 0 015.292 3m13.416 0a8.969 8.969 0 012.168 4.5" />
       </svg>
     ),
   },
@@ -196,9 +207,18 @@ export default function Sidebar({ user, currentPath }: SidebarProps) {
           <div className="w-8 h-8 rounded-full bg-indigo-500/30 flex items-center justify-center text-indigo-300 font-semibold text-sm shrink-0">
             {displayName[0]?.toUpperCase() ?? '?'}
           </div>
-          <div className="min-w-0 flex-1">
+          {/*<div className="min-w-0 flex-1">
             <p className="text-white text-sm font-medium truncate">{displayName}</p>
             <span className={`badge ${badge.className}`}>{badge.label}</span>
+          </div>*/}
+          <div className="min-w-0 flex-1">
+            <p className="text-white text-sm font-medium truncate">{displayName}</p>
+            {/* La sécurité est ici : on vérifie que badge existe avant d'accéder à ses propriétés */}
+            {badge && badge.className && (
+              <span className={`badge ${badge.className}`}>
+                {badge.label}
+              </span>
+            )}
           </div>
         </div>
 
