@@ -1,0 +1,50 @@
+# ── Python ───────────────────────────────────────
+__pycache__/
+*.py[cod]
+*.pyo
+*.pyd
+*.egg-info/
+dist/
+build/
+.eggs/
+.venv/
+venv/
+env/
+
+# ── Django ───────────────────────────────────────
+*.sqlite3
+*.log
+staticfiles/
+mediafiles/
+
+# ── Variables d'environnement ────────────────────
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# ── Node / Next.js ───────────────────────────────
+node_modules/
+.next/
+out/
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+
+# ── IDE / Éditeurs ───────────────────────────────
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# ── OS ───────────────────────────────────────────
+.DS_Store
+Thumbs.db
+
+# ── Outils IA ────────────────────────────────────
+.claude/
+.codex/
+
+# ── Divers ───────────────────────────────────────
+*.png
+tsconfig.tsbuildinfo
