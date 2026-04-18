@@ -114,3 +114,15 @@ export interface DossierReinscription {
   etudiant_nom: string;
   notifications: Notification[] | undefined;
 }
+
+export interface CreneauVisite {
+  id: number;
+  medecin_nom: string;
+  ufr: string;
+  departement: string;
+  filiere: string;
+  niveau: string;
+  date_debut: string;
+  date_fin: string;
+  created_at: string;
+}

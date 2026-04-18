@@ -62,3 +62,18 @@ class Paiement(models.Model):
 
     def __str__(self):
         return f"{self.reference} - {self.status}"
+# ==============================
+# Créneau de Visite
+# ==============================
+class CreneauVisite(models.Model):
+    medecin     = models.ForeignKey(Medecin, on_delete=models.CASCADE, related_name='creneaux')
+    ufr         = models.CharField(max_length=100)
+    departement = models.CharField(max_length=100)
+    filiere     = models.CharField(max_length=100)
+    niveau      = models.CharField(max_length=20)
+    date_debut  = models.DateField()
+    date_fin    = models.DateField()
+    created_at  = models.DateTimeField(auto_now_add=True)
+
+    def __str__(self):
+        return f"Créneau {self.filiere} {self.niveau} : {self.date_debut} → {self.date_fin}"

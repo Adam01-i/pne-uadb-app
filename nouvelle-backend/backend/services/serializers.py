@@ -82,3 +82,17 @@ class PaiementSerializer(serializers.ModelSerializer):
             'montant', 'reference', 'status', 'method',
             'created_at', 'updated_at',
         ]
+
+from .models import CreneauVisite
+
+class CreneauVisiteSerializer(serializers.ModelSerializer):
+    medecin_nom = serializers.CharField(source='medecin.user.get_full_name', read_only=True)
+    medecin_id  = serializers.PrimaryKeyRelatedField(
+        queryset=Medecin.objects.all(),
+        source='medecin',
+        write_only=True
+    )
+
+    class Meta:
+        model  = CreneauVisite
+        fields = ['id', 'medecin_nom', 'medecin_id', 'ufr', 'departement', 'filiere', 'niveau', 'date_debut', 'date_fin', 'created_at']

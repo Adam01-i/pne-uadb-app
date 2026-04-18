@@ -22,6 +22,7 @@ const EMPTY: FormState = { ufr: '', departement: '', filiere: '', niveau: '', an
 
 // ── Choix conformes au système LMD / UADB ────────────────
 const UFR_OPTIONS = [
+  'SATIC',
   'UFR Sciences et Technologies',
   'UFR Sciences Économiques et de Gestion',
   'UFR Sciences Humaines et Sociales',
@@ -30,6 +31,10 @@ const UFR_OPTIONS = [
 ];
 
 const DEPARTEMENT_OPTIONS: Record<string, string[]> = {
+  // ── SATIC ──
+  'SATIC': ['TIC'],
+
+  // ── Autres UFR ──
   'UFR Sciences et Technologies': [
     'Département Informatique',
     'Département Mathématiques',
@@ -58,6 +63,10 @@ const DEPARTEMENT_OPTIONS: Record<string, string[]> = {
 };
 
 const FILIERE_OPTIONS: Record<string, string[]> = {
+  // ── SATIC / TIC ──
+  'TIC': ['D2A', 'SRT', 'SI', 'SR'],
+
+  // ── Autres départements ──
   'Département Informatique': [
     'Licence Informatique',
     'Master Informatique',
@@ -114,15 +123,25 @@ const NIVEAUX_MASTER  = ['M1', 'M2'];
 const NIVEAUX_ALL     = [...NIVEAUX_LICENCE, ...NIVEAUX_MASTER];
 
 function getNiveauxPourFiliere(filiere: string): string[] {
+  // Filières SATIC explicites
+  if (['D2A', 'SRT'].includes(filiere)) return NIVEAUX_LICENCE;
+  if (['SI', 'SR'].includes(filiere))   return NIVEAUX_MASTER;
+  // Autres filières : détection par préfixe
   const f = filiere.toLowerCase();
   if (f.startsWith('master') || f.startsWith('m ')) return NIVEAUX_MASTER;
-  if (f.startsWith('licence') || f.startsWith('l '))  return NIVEAUX_LICENCE;
+  if (f.startsWith('licence') || f.startsWith('l ')) return NIVEAUX_LICENCE;
   return NIVEAUX_ALL;
 }
 
 function getCurrentAcademicYears(): string[] {
   const now = new Date().getFullYear();
-  return [`${now - 1}-${now}`, `${now}-${now + 1}`, `${now + 1}-${now + 2}`];
+  return [
+    `${now - 1}-${now}`,
+    `${now}-${now + 1}`,
+    `${now + 1}-${now + 2}`,
+    `${now + 2}-${now + 3}`,
+    `${now + 3}-${now + 4}`,
+  ];
 }
 
 export default function ClasseForm({ item, onSuccess, onCancel }: Props) {
@@ -145,10 +164,9 @@ export default function ClasseForm({ item, onSuccess, onCancel }: Props) {
   function setField(field: keyof FormState, value: string) {
     setForm(prev => {
       const next = { ...prev, [field]: value };
-      // Cascade : réinitialise les champs dépendants si le parent change
-      if (field === 'ufr') { next.departement = ''; next.filiere = ''; next.niveau = ''; }
+      if (field === 'ufr')         { next.departement = ''; next.filiere = ''; next.niveau = ''; }
       if (field === 'departement') { next.filiere = ''; next.niveau = ''; }
-      if (field === 'filiere') { next.niveau = ''; }
+      if (field === 'filiere')     { next.niveau = ''; }
       return next;
     });
   }

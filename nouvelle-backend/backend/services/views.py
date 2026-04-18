@@ -7,8 +7,8 @@ from django.shortcuts import get_object_or_404
 
 import uuid
 
-from .models import VisiteMedicale, ValidationBibliotheque, Paiement
-from .serializers import VisiteMedicaleSerializer, ValidationBibliothequeSerializer, PaiementSerializer
+from .models import VisiteMedicale, ValidationBibliotheque, Paiement, CreneauVisite
+from .serializers import VisiteMedicaleSerializer, ValidationBibliothequeSerializer, PaiementSerializer, CreneauVisiteSerializer
 from .permissions import IsMedecin, IsBibliothecaire
 from users.models import Etudiant
 
@@ -148,3 +148,25 @@ def paytech_callback(request):
     paiement.save()
 
     return Response({"message": "OK"})
+
+
+# ==============================
+# CRENEAU VISITE
+# ==============================
+class CreneauVisiteViewSet(viewsets.ModelViewSet):
+    serializer_class = CreneauVisiteSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsMedecin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        qs = CreneauVisite.objects.all().order_by('-created_at')
+        filiere = self.request.GET.get('filiere')
+        niveau  = self.request.GET.get('niveau')
+        if filiere:
+            qs = qs.filter(filiere=filiere)
+        if niveau:
+            qs = qs.filter(niveau=niveau)
+        return qs
