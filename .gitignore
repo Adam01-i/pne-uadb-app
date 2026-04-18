@@ -59,8 +59,10 @@ db.sqlite3__pycache__/
 __pycache__/
 *.pyc
 db.sqlite3
-<<<<<<< HEAD
-=======
 .env
->>>>>>> 6d216a9 (integration du payement avec paytech)
 frontend/node_modules/
+
+node_modules/
+.next/
+dist/
+build/
