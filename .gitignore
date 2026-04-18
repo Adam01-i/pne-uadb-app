@@ -63,3 +63,4 @@ db.sqlite3
 =======
 .env
 >>>>>>> 6d216a9 (integration du payement avec paytech)
+frontend/node_modules/
