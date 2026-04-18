@@ -29,7 +29,7 @@ export default function Header({ user }: { user: User }) {
       <p className="text-slate-500 text-sm capitalize">{dateStr}</p>
 
       <div className="flex items-center gap-3">
-        {user.role === 'etudiant' && <NotificationBell />}
+        <NotificationBell />
 
         <span className="text-sm text-slate-600 font-medium hidden sm:block">
           {ROLE_LABEL[user.role]}

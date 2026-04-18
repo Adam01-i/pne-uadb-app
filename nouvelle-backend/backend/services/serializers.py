@@ -1,6 +1,7 @@
 from rest_framework import serializers
-from .models import VisiteMedicale, ValidationBibliotheque, Paiement
-from users.models import Etudiant, Medecin, Bibliothecaire
+from .models import VisiteMedicale, ValidationBibliotheque, Paiement, PlanningVisiteMedicale, CreneauVisite
+from users.models import Etudiant, Medecin, Bibliothecaire, Classe
+from users.serializers import EtudiantSerializer
 
 
 # ==============================
@@ -82,3 +83,72 @@ class PaiementSerializer(serializers.ModelSerializer):
             'montant', 'reference', 'status', 'method',
             'created_at', 'updated_at',
         ]
+
+
+# ==============================
+# Créneau Visite
+# ==============================
+class CreneauVisiteSerializer(serializers.ModelSerializer):
+    etudiant_ids = serializers.PrimaryKeyRelatedField(
+        queryset=Etudiant.objects.all(),
+        source='etudiants',
+        many=True,
+        write_only=True,
+    )
+    etudiants = EtudiantSerializer(many=True, read_only=True)
+
+    class Meta:
+        model = CreneauVisite
+        fields = ['id', 'numero_groupe', 'date', 'heure_debut', 'heure_fin', 'etudiant_ids', 'etudiants']
+
+
+# ==============================
+# Planning Visite Médicale
+# ==============================
+class PlanningVisiteMedicaleSerializer(serializers.ModelSerializer):
+    medecin_id = serializers.PrimaryKeyRelatedField(
+        queryset=Medecin.objects.all(),
+        source='medecin',
+        write_only=True,
+    )
+    classe_id = serializers.PrimaryKeyRelatedField(
+        queryset=Classe.objects.all(),
+        source='classe',
+        write_only=True,
+    )
+    medecin_nom = serializers.CharField(source='medecin.user.get_full_name', read_only=True)
+    classe_info = serializers.SerializerMethodField(read_only=True)
+    creneaux = CreneauVisiteSerializer(many=True)
+    created_at = serializers.DateTimeField(read_only=True)
+
+    class Meta:
+        model = PlanningVisiteMedicale
+        fields = ['id', 'medecin_id', 'medecin_nom', 'classe_id', 'classe_info', 'creneaux', 'created_at']
+
+    def get_classe_info(self, obj):
+        c = obj.classe
+        return f"{c.ufr} – {c.filiere} {c.niveau}"
+
+    def create(self, validated_data):
+        from inscriptions.models import Notifications
+        creneaux_data = validated_data.pop('creneaux')
+        planning = PlanningVisiteMedicale.objects.create(**validated_data)
+        medecin_nom = planning.medecin.user.get_full_name()
+
+        for creneau_data in creneaux_data:
+            etudiants = creneau_data.pop('etudiants')
+            creneau = CreneauVisite.objects.create(planning=planning, **creneau_data)
+            creneau.etudiants.set(etudiants)
+
+            for etudiant in etudiants:
+                Notifications.objects.create(
+                    emetteur=f"Dr. {medecin_nom}",
+                    message=(
+                        f"Vous êtes convoqué(e) pour une visite médicale.\n"
+                        f"Groupe {creneau.numero_groupe} – {creneau.date.strftime('%d/%m/%Y')} "
+                        f"de {creneau.heure_debut.strftime('%H:%M')} à {creneau.heure_fin.strftime('%H:%M')}."
+                    ),
+                    etudiant=etudiant,
+                )
+
+        return planning

@@ -1,5 +1,8 @@
 from django.db import models
-from users.models import Etudiant # On importe l'Etudiant de la Personne 1
+from users.models import Etudiant
+from django.contrib.auth import get_user_model
+
+CustomUser = get_user_model()
 
 class DossierReinscription(models.Model):
     # Correspond à l'Enum Statut de ton diagramme
@@ -34,5 +37,13 @@ class Notifications(models.Model):
     dateEnvoie = models.DateTimeField(auto_now_add=True)
     lu = models.BooleanField(default=False)
 
-    # Relation 0..* (Un étudiant peut avoir plusieurs notifications)
-    etudiant = models.ForeignKey(Etudiant, on_delete=models.CASCADE, related_name='notifications')
+    # Destinataire étudiant (nullable — mutuellement exclusif avec destinataire)
+    etudiant = models.ForeignKey(
+        Etudiant, on_delete=models.CASCADE,
+        related_name='notifications', null=True, blank=True,
+    )
+    # Destinataire staff (médecin, bibliothécaire, agent…)
+    destinataire = models.ForeignKey(
+        CustomUser, on_delete=models.CASCADE,
+        related_name='notifications_recues', null=True, blank=True,
+    )

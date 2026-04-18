@@ -142,10 +142,11 @@ export default function PaiementsPage() {
       setLoading(true);
       setLoadError('');
       try {
-        const [etudiants, statut] = await Promise.all([
-          api.get<Etudiant[]>('/api/etudiants/'),
+        const [etudiantData, statut] = await Promise.all([
+          api.get<{ results: Etudiant[] } | Etudiant[]>('/api/etudiants/'),
           api.get<{ paye: boolean; montant?: number; reference?: string; method?: string }>('/api/services/paytech/statut/'),
         ]);
+        const etudiants = Array.isArray(etudiantData) ? etudiantData : (etudiantData as { results: Etudiant[] }).results;
         if (etudiants.length > 0) setMyProfile(etudiants[0]);
         else setLoadError('Profil étudiant introuvable. Contactez l\'administration.');
         if (statut.paye && statut.montant && statut.reference) {

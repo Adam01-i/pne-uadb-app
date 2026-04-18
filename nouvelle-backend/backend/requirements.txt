@@ -10,3 +10,5 @@ python-dotenv==1.2.2
 requests==2.32.3
 sqlparse==0.5.5
 tzdata==2026.1
+reportlab==4.4.10
+pillow==12.2.0

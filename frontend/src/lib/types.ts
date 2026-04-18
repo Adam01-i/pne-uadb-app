@@ -77,6 +77,24 @@ export interface Paiement {
   updated_at: string;
 }
 
+// ── Planning Visite Médicale ───────────────────────────────
+export interface CreneauVisite {
+  id: number;
+  numero_groupe: number;
+  date: string;
+  heure_debut: string;
+  heure_fin: string;
+  etudiants: Etudiant[];
+}
+
+export interface PlanningVisiteMedicale {
+  id: number;
+  medecin_nom: string;
+  classe_info: string;
+  creneaux: CreneauVisite[];
+  created_at: string;
+}
+
 // ── Inscriptions ──────────────────────────────────────────
 export type StatutDossier = 'EN_ATTENTE' | 'VALIDE' | 'REJETE';
 

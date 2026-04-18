@@ -7,10 +7,14 @@ from django.shortcuts import get_object_or_404
 
 import uuid
 
-from .models import VisiteMedicale, ValidationBibliotheque, Paiement
-from .serializers import VisiteMedicaleSerializer, ValidationBibliothequeSerializer, PaiementSerializer
+from .models import VisiteMedicale, ValidationBibliotheque, Paiement, PlanningVisiteMedicale
+from .serializers import (
+    VisiteMedicaleSerializer, ValidationBibliothequeSerializer, PaiementSerializer,
+    PlanningVisiteMedicaleSerializer,
+)
 from .permissions import IsMedecin, IsBibliothecaire
-from users.models import Etudiant
+from users.models import Etudiant, Classe
+from users.serializers import EtudiantSerializer, ClasseSerializer
 
 
 # ==============================
@@ -44,6 +48,23 @@ class VisiteMedicaleViewSet(viewsets.ModelViewSet):
             return VisiteMedicale.objects.filter(etudiant__user=user)
         return VisiteMedicale.objects.all()
 
+    def _sync_dossier_visite(self, visite):
+        from inscriptions.models import DossierReinscription
+        try:
+            dossier = DossierReinscription.objects.get(etudiant=visite.etudiant)
+            dossier.statusVisite = 'VALIDE' if visite.aptitude else 'REJETE'
+            dossier.save(update_fields=['statusVisite'])
+        except DossierReinscription.DoesNotExist:
+            pass
+
+    def perform_create(self, serializer):
+        visite = serializer.save()
+        self._sync_dossier_visite(visite)
+
+    def perform_update(self, serializer):
+        visite = serializer.save()
+        self._sync_dossier_visite(visite)
+
 
 # ==============================
 # VALIDATION BIBLIOTHEQUE
@@ -75,6 +96,15 @@ class ValidationBibliothequeViewSet(viewsets.ModelViewSet):
 
         validation.en_regle = en_regle
         validation.save()
+
+        # Synchroniser statusValidation sur le dossier
+        from inscriptions.models import DossierReinscription
+        try:
+            dossier = validation.etudiant.dossier
+            dossier.statusValidation = 'VALIDE' if en_regle else 'REJETE'
+            dossier.save(update_fields=['statusValidation'])
+        except DossierReinscription.DoesNotExist:
+            pass
 
         return Response({
             'message': 'Étudiant marqué en règle.' if en_regle else 'Étudiant marqué pas en règle.'
@@ -147,4 +177,88 @@ def paytech_callback(request):
     paiement.status = "success" if status_pay == "success" else "failed"
     paiement.save()
 
+    # Synchroniser statusPaiement sur le dossier
+    if paiement.status == 'success':
+        from inscriptions.models import DossierReinscription
+        try:
+            dossier = paiement.etudiant.dossier
+            dossier.statusPaiement = 'VALIDE'
+            dossier.datePaiement = paiement.updated_at
+            dossier.montant = paiement.montant
+            dossier.operateur = paiement.method
+            dossier.save(update_fields=['statusPaiement', 'datePaiement', 'montant', 'operateur'])
+        except DossierReinscription.DoesNotExist:
+            pass
+
     return Response({"message": "OK"})
+
+
+# ==============================
+# PLANNING VISITE MEDICALE
+# ==============================
+class PlanningVisiteMedicaleViewSet(viewsets.ModelViewSet):
+    serializer_class = PlanningVisiteMedicaleSerializer
+
+    def get_permissions(self):
+        if self.action in ['create', 'update', 'partial_update', 'destroy']:
+            return [IsMedecin()]
+        return [IsAuthenticated()]
+
+    def get_queryset(self):
+        return PlanningVisiteMedicale.objects.prefetch_related('creneaux__etudiants__user').all()
+
+
+# ==============================
+# ÉTUDIANTS PAR CLASSE (filtrage)
+# ==============================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def etudiants_par_classe(request):
+    ufr = request.query_params.get('ufr', '').strip()
+    departement = request.query_params.get('departement', '').strip()
+    niveau = request.query_params.get('niveau', '').strip()
+    code = request.query_params.get('code', '').strip()
+
+    qs = Etudiant.objects.select_related('user', 'classe').all()
+    if ufr:
+        qs = qs.filter(classe__ufr__iexact=ufr)
+    if departement:
+        qs = qs.filter(classe__departement__iexact=departement)
+    if niveau:
+        qs = qs.filter(classe__niveau__iexact=niveau)
+    if code:
+        qs = qs.filter(code_permanent__icontains=code)
+
+    qs = qs.order_by('user__last_name', 'user__first_name')
+    return Response(EtudiantSerializer(qs, many=True).data)
+
+
+# ==============================
+# CLASSES DISPONIBLES (UFR + départements + niveaux)
+# ==============================
+@api_view(['GET'])
+@permission_classes([IsAuthenticated])
+def classes_disponibles(request):
+    from inscriptions.models import DossierReinscription
+
+    classes = Classe.objects.order_by('ufr', 'departement', 'niveau')
+
+    # Pour le médecin et le bibliothécaire : uniquement les classes dont des dossiers ont été créés
+    role = getattr(request.user, 'role', None)
+    if role in ('medecin', 'biblio'):
+        classes_avec_dossiers = (
+            DossierReinscription.objects
+            .values_list('etudiant__classe_id', flat=True)
+            .distinct()
+        )
+        classes = classes.filter(id__in=classes_avec_dossiers)
+
+    ufrs = sorted(set(classes.values_list('ufr', flat=True)))
+    departements = sorted(set(classes.values_list('departement', flat=True)))
+    niveaux = sorted(set(classes.values_list('niveau', flat=True)))
+    return Response({
+        'ufrs': ufrs,
+        'departements': departements,
+        'niveaux': niveaux,
+        'classes': ClasseSerializer(classes, many=True).data,
+    })

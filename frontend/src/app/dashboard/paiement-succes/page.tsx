@@ -1,10 +1,10 @@
 'use client';
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, Suspense } from 'react';
 import { useSearchParams, useRouter } from 'next/navigation';
 import Link from 'next/link';
 
-export default function PaiementSuccesPage() {
+function PaiementSuccesContent() {
   const searchParams = useSearchParams();
   const router = useRouter();
   const ref = searchParams.get('ref');
@@ -12,17 +12,16 @@ export default function PaiementSuccesPage() {
 
   useEffect(() => {
     const timer = setInterval(() => {
-      setCountdown(n => {
-        if (n <= 1) {
-          clearInterval(timer);
-          router.replace('/dashboard/dossier');
-          return 0;
-        }
-        return n - 1;
-      });
+      setCountdown(n => (n <= 1 ? 0 : n - 1));
     }, 1000);
     return () => clearInterval(timer);
-  }, [router]);
+  }, []);
+
+  useEffect(() => {
+    if (countdown === 0) {
+      router.replace('/dashboard/dossier');
+    }
+  }, [countdown, router]);
 
   return (
     <div className="flex items-center justify-center min-h-[60vh]">
@@ -50,5 +49,13 @@ export default function PaiementSuccesPage() {
         </Link>
       </div>
     </div>
+  );
+}
+
+export default function PaiementSuccesPage() {
+  return (
+    <Suspense fallback={<div className="flex items-center justify-center min-h-[60vh]"><div className="w-8 h-8 border-4 border-indigo-600 border-t-transparent rounded-full animate-spin" /></div>}>
+      <PaiementSuccesContent />
+    </Suspense>
   );
 }

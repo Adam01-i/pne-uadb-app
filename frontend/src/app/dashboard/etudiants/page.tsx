@@ -23,6 +23,13 @@ interface ImportResult {
   message?: string;
 }
 
+interface PaginatedResponse {
+  count: number;
+  next: string | null;
+  previous: string | null;
+  results: Etudiant[];
+}
+
 function parseCsv(text: string): CsvRow[] {
   const lines = text.trim().split(/\r?\n/);
   if (lines.length < 2) return [];
@@ -102,18 +109,12 @@ function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDone: () =
 
   return (
     <div className="space-y-4">
-      {/* Format attendu */}
       <div className="bg-slate-50 rounded-lg p-3 text-xs text-slate-600 font-mono">
         prenom,nom,email,password,code_permanent,classe_id
       </div>
-
-      {/* Sélection fichier */}
       <div>
         <input ref={fileRef} type="file" accept=".csv,text/csv" className="hidden" onChange={handleFile} />
-        <button
-          className="btn-secondary w-full"
-          onClick={() => fileRef.current?.click()}
-        >
+        <button className="btn-secondary w-full" onClick={() => fileRef.current?.click()}>
           <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
             <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
           </svg>
@@ -121,7 +122,6 @@ function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDone: () =
         </button>
       </div>
 
-      {/* Aperçu */}
       {rows.length > 0 && !done && (
         <>
           <p className="text-sm text-slate-600">{rows.length} ligne{rows.length > 1 ? 's' : ''} détectée{rows.length > 1 ? 's' : ''}</p>
@@ -157,7 +157,6 @@ function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDone: () =
         </>
       )}
 
-      {/* Résultats */}
       {done && (
         <>
           <div className={`p-3 rounded-lg text-sm font-medium ${errCount === 0 ? 'bg-emerald-50 text-emerald-700' : 'bg-amber-50 text-amber-700'}`}>
@@ -188,20 +187,35 @@ function CsvImportModal({ onClose, onDone }: { onClose: () => void; onDone: () =
 export default function EtudiantsPage() {
   const { user } = useAuth();
   const [items, setItems] = useState<Etudiant[]>([]);
-  const [filtered, setFiltered] = useState<Etudiant[]>([]);
+  const [count, setCount] = useState(0);
+  const [page, setPage] = useState(1);
   const [loading, setLoading] = useState(true);
   const [search, setSearch] = useState('');
+  const [debouncedSearch, setDebouncedSearch] = useState('');
   const [modal, setModal] = useState<{ open: boolean; item?: Etudiant }>({ open: false });
   const [confirmDelete, setConfirmDelete] = useState<Etudiant | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [showCsv, setShowCsv] = useState(false);
 
-  const load = useCallback(async () => {
+  const PAGE_SIZE = 25;
+
+  // Debounce search input — reset to page 1 on new query
+  useEffect(() => {
+    const timer = setTimeout(() => {
+      setDebouncedSearch(search);
+      setPage(1);
+    }, 400);
+    return () => clearTimeout(timer);
+  }, [search]);
+
+  const load = useCallback(async (currentPage: number, query: string) => {
     setLoading(true);
     try {
-      const data = await api.get<Etudiant[]>('/api/etudiants/');
-      setItems(data);
-      setFiltered(data);
+      const params = new URLSearchParams({ page: String(currentPage) });
+      if (query) params.set('search', query);
+      const data = await api.get<PaginatedResponse>(`/api/etudiants/?${params.toString()}`);
+      setItems(data.results);
+      setCount(data.count);
     } catch {
       // ignore
     } finally {
@@ -209,19 +223,9 @@ export default function EtudiantsPage() {
     }
   }, []);
 
-  useEffect(() => { load(); }, [load]);
-
   useEffect(() => {
-    const q = search.toLowerCase();
-    if (!q) { setFiltered(items); return; }
-    setFiltered(items.filter(e =>
-      e.user.first_name.toLowerCase().includes(q) ||
-      e.user.last_name.toLowerCase().includes(q) ||
-      e.user.email.toLowerCase().includes(q) ||
-      e.code_permanent.toLowerCase().includes(q) ||
-      e.classe?.filiere?.toLowerCase().includes(q)
-    ));
-  }, [search, items]);
+    load(page, debouncedSearch);
+  }, [load, page, debouncedSearch]);
 
   async function handleDelete() {
     if (!confirmDelete) return;
@@ -229,7 +233,7 @@ export default function EtudiantsPage() {
     try {
       await api.delete(`/api/etudiants/${confirmDelete.id}/`);
       setConfirmDelete(null);
-      load();
+      load(page, debouncedSearch);
     } catch {
       // ignore
     } finally {
@@ -237,6 +241,7 @@ export default function EtudiantsPage() {
     }
   }
 
+  const totalPages = Math.ceil(count / PAGE_SIZE);
   const isAgent = user?.role === 'agent';
 
   return (
@@ -244,7 +249,10 @@ export default function EtudiantsPage() {
       <div className="flex items-center justify-between mb-6">
         <div>
           <h1 className="text-xl font-bold text-slate-800">Étudiants</h1>
-          <p className="text-slate-500 text-sm mt-0.5">{filtered.length} étudiant{filtered.length !== 1 ? 's' : ''}</p>
+          <p className="text-slate-500 text-sm mt-0.5">
+            {count} étudiant{count !== 1 ? 's' : ''}
+            {debouncedSearch && ` · résultats pour "${debouncedSearch}"`}
+          </p>
         </div>
         {isAgent && (
           <div className="flex gap-2">
@@ -276,6 +284,16 @@ export default function EtudiantsPage() {
             value={search}
             onChange={e => setSearch(e.target.value)}
           />
+          {search && (
+            <button
+              className="absolute right-3 top-1/2 -translate-y-1/2 text-slate-400 hover:text-slate-600"
+              onClick={() => setSearch('')}
+            >
+              <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+                <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          )}
         </div>
       </div>
 
@@ -283,23 +301,25 @@ export default function EtudiantsPage() {
       <div className="card overflow-hidden">
         {loading ? (
           <div className="divide-y divide-slate-50">
-            {[...Array(5)].map((_, i) => (
+            {[...Array(8)].map((_, i) => (
               <div key={i} className="flex items-center gap-4 px-5 py-4">
                 <div className="w-8 h-8 bg-slate-100 rounded-full animate-pulse" />
                 <div className="flex-1 space-y-2">
                   <div className="h-4 bg-slate-100 rounded w-48 animate-pulse" />
                   <div className="h-3 bg-slate-100 rounded w-32 animate-pulse" />
                 </div>
+                <div className="h-3 bg-slate-100 rounded w-20 animate-pulse" />
+                <div className="h-3 bg-slate-100 rounded w-16 animate-pulse" />
               </div>
             ))}
           </div>
-        ) : filtered.length === 0 ? (
+        ) : items.length === 0 ? (
           <div className="text-center py-16 text-slate-500">
             <svg className="w-12 h-12 mx-auto mb-3 text-slate-300" fill="none" viewBox="0 0 24 24" stroke="currentColor">
               <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1} d="M18 18.72a9.094 9.094 0 003.741-.479 3 3 0 00-4.682-2.72m.94 3.198l.001.031c0 .225-.012.447-.037.666A11.944 11.944 0 0112 21c-2.17 0-4.207-.576-5.963-1.584A6.062 6.062 0 016 18.719m12 0a5.971 5.971 0 00-.941-3.197m0 0A5.995 5.995 0 0012 12.75a5.995 5.995 0 00-5.058 2.772m0 0a3 3 0 00-4.681 2.72 8.986 8.986 0 003.74.477m.94-3.197a5.971 5.971 0 00-.94 3.197M15 6.75a3 3 0 11-6 0 3 3 0 016 0zm6 3a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0zm-13.5 0a2.25 2.25 0 11-4.5 0 2.25 2.25 0 014.5 0z" />
             </svg>
             <p className="font-medium">Aucun étudiant trouvé</p>
-            <p className="text-sm mt-1">{search ? 'Essayez un autre terme de recherche.' : 'Commencez par ajouter un étudiant.'}</p>
+            <p className="text-sm mt-1">{debouncedSearch ? 'Essayez un autre terme de recherche.' : 'Commencez par ajouter un étudiant.'}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
@@ -314,7 +334,7 @@ export default function EtudiantsPage() {
                 </tr>
               </thead>
               <tbody className="divide-y divide-slate-50">
-                {filtered.map(e => {
+                {items.map(e => {
                   const name = `${e.user.first_name} ${e.user.last_name}`.trim() || e.user.username;
                   return (
                     <tr key={e.id} className="hover:bg-slate-50/50 transition-colors">
@@ -371,6 +391,31 @@ export default function EtudiantsPage() {
         )}
       </div>
 
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 px-1">
+          <p className="text-sm text-slate-500">
+            Page {page} sur {totalPages} · {count} résultat{count !== 1 ? 's' : ''}
+          </p>
+          <div className="flex gap-2">
+            <button
+              className="btn-secondary py-1.5 px-3 text-sm"
+              disabled={page <= 1}
+              onClick={() => setPage(p => p - 1)}
+            >
+              ← Précédent
+            </button>
+            <button
+              className="btn-secondary py-1.5 px-3 text-sm"
+              disabled={page >= totalPages}
+              onClick={() => setPage(p => p + 1)}
+            >
+              Suivant →
+            </button>
+          </div>
+        </div>
+      )}
+
       {/* Modal formulaire */}
       <Modal
         open={modal.open}
@@ -380,14 +425,14 @@ export default function EtudiantsPage() {
       >
         <EtudiantForm
           item={modal.item}
-          onSuccess={() => { setModal({ open: false }); load(); }}
+          onSuccess={() => { setModal({ open: false }); load(page, debouncedSearch); }}
           onCancel={() => setModal({ open: false })}
         />
       </Modal>
 
       {/* Modal import CSV */}
       <Modal open={showCsv} title="Importer des étudiants via CSV" onClose={() => setShowCsv(false)} size="lg">
-        <CsvImportModal onClose={() => setShowCsv(false)} onDone={load} />
+        <CsvImportModal onClose={() => setShowCsv(false)} onDone={() => load(1, debouncedSearch)} />
       </Modal>
 
       {/* Modal confirmation suppression */}
